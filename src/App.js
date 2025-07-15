@@ -5,6 +5,8 @@ function App() {
   const [sender, setSender] = useState('');
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
+  const [editingId, setEditingId] = useState(null);
+  const [editText, setEditText] = useState('');
 
   const fetchMessages = async () => {
     try {
@@ -20,6 +22,38 @@ function App() {
     try {
       await axios.post('http://localhost:5000/api/messages', { sender, message });
       setMessage('');
+      fetchMessages();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+ const deleteMessage = async (id) => {
+  try {
+    await axios.delete(`http://localhost:5000/api/messages/${id}`);
+    fetchMessages(); // Refresh after delete
+  } catch (err) {
+    console.error('Delete error:', err.response?.data || err.message);
+  }
+};
+
+
+  const startEdit = (msg) => {
+    setEditingId(msg.id);
+    setEditText(msg.message);
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditText('');
+  };
+
+  const updateMessage = async (id) => {
+    if (!editText.trim()) return;
+    try {
+      await axios.put(`http://localhost:5000/api/messages/${id}`, { message: editText });
+      setEditingId(null);
+      setEditText('');
       fetchMessages();
     } catch (err) {
       console.error(err);
@@ -54,7 +88,29 @@ function App() {
         <h2 style={styles.subtitle}>Messages</h2>
         {messages.map((msg) => (
           <div key={msg.id} style={styles.messageCard}>
-            <strong>{msg.sender}:</strong> <span>{msg.message}</span>
+            <strong>{msg.sender}:</strong>{' '}
+            {editingId === msg.id ? (
+              <>
+                <input
+                  value={editText}
+                  onChange={(e) => setEditText(e.target.value)}
+                  style={{ padding: '4px', margin: '5px 0', width: '100%' }}
+                />
+                <div style={{ marginTop: '5px' }}>
+                  <button onClick={() => updateMessage(msg.id)} style={styles.updateBtn}>Update</button>
+                  <button onClick={cancelEdit} style={styles.cancelBtn}>Cancel</button>
+                </div>
+              </>
+            ) : (
+              <span>{msg.message}</span>
+            )}
+
+            {msg.sender === sender && editingId !== msg.id && (
+              <div style={{ marginTop: '5px' }}>
+                <button onClick={() => startEdit(msg)} style={styles.editBtn}>Edit</button>
+                <button onClick={() => deleteMessage(msg.id)} style={styles.deleteBtn}>Delete</button>
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -121,6 +177,40 @@ const styles = {
     borderRadius: '8px',
     marginBottom: '10px',
     boxShadow: '0 1px 3px rgba(0,0,0,0.08)'
+  },
+  editBtn: {
+    backgroundColor: '#ffc107',
+    color: '#000',
+    border: 'none',
+    padding: '5px 10px',
+    marginRight: '5px',
+    borderRadius: '5px',
+    cursor: 'pointer'
+  },
+  deleteBtn: {
+    backgroundColor: '#dc3545',
+    color: '#fff',
+    border: 'none',
+    padding: '5px 10px',
+    borderRadius: '5px',
+    cursor: 'pointer'
+  },
+  updateBtn: {
+    backgroundColor: '#28a745',
+    color: '#fff',
+    border: 'none',
+    padding: '5px 10px',
+    marginRight: '5px',
+    borderRadius: '5px',
+    cursor: 'pointer'
+  },
+  cancelBtn: {
+    backgroundColor: '#6c757d',
+    color: '#fff',
+    border: 'none',
+    padding: '5px 10px',
+    borderRadius: '5px',
+    cursor: 'pointer'
   }
 };
 
