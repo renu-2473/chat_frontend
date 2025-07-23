@@ -28,15 +28,14 @@ function App() {
     }
   };
 
- const deleteMessage = async (id) => {
-  try {
-    await axios.delete(`http://localhost:5000/api/messages/${id}`);
-    fetchMessages(); // Refresh after delete
-  } catch (err) {
-    console.error('Delete error:', err.response?.data || err.message);
-  }
-};
-
+  const deleteMessage = async (id) => {
+    try {
+      await axios.delete(`http://localhost:5000/api/messages/${id}`);
+      fetchMessages();
+    } catch (err) {
+      console.error('Delete error:', err.response?.data || err.message);
+    }
+  };
 
   const startEdit = (msg) => {
     setEditingId(msg.id);
@@ -51,16 +50,21 @@ function App() {
   const updateMessage = async (id) => {
     if (!editText.trim()) return;
     try {
-      await axios.put(`http://localhost:5000/api/messages/${id}`, { message: editText });
+      const res = await axios.put(`http://localhost:5000/api/messages/${id}`, {
+        message: editText,
+      });
+      console.log('Update success:', res.data);
       setEditingId(null);
       setEditText('');
       fetchMessages();
     } catch (err) {
-      console.error(err);
+      console.error('Update failed:', err.response?.data || err.message);
     }
   };
 
   useEffect(() => {
+    const storedSender = localStorage.getItem('sender');
+    if (storedSender) setSender(storedSender);
     fetchMessages();
   }, []);
 
@@ -72,7 +76,10 @@ function App() {
         <input
           placeholder="Your name"
           value={sender}
-          onChange={(e) => setSender(e.target.value)}
+          onChange={(e) => {
+            setSender(e.target.value);
+            localStorage.setItem('sender', e.target.value);
+          }}
           style={styles.input}
         />
         <textarea
@@ -94,6 +101,7 @@ function App() {
                 <input
                   value={editText}
                   onChange={(e) => setEditText(e.target.value)}
+                  autoFocus
                   style={{ padding: '4px', margin: '5px 0', width: '100%' }}
                 />
                 <div style={{ marginTop: '5px' }}>
